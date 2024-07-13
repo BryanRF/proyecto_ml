@@ -43,11 +43,11 @@
       <input type="file" class="form-control" id="datasetFile" accept=".zip" required />
   </div>
   <div class="progress mb-3" role="progressbar" aria-label="Basic example" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
-    <div class="progress-bar " style="width: 0%"></div>
+    <div class="progress-bar " id="progreso-actual" style="width: 0%"></div>
   </div>
   <button type="submit" class="btn btn-primary" id="uploadButton">
       <span class="spinner-border spinner-border-sm me-2 d-none" role="status" aria-hidden="true"></span>
-      Subir Dataset
+      Entrenar Dataset
   </button>
  
 </form>
@@ -64,6 +64,14 @@
 {% block extra_js %}
 <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
 <script>
+    var progressBar = document.getElementById('progreso-actual');
+   
+        channel.bind(document.getElementById("uuidField").value, function(data) {
+            if (data.progreso) {
+            // Actualizar el ancho de la barra de progreso
+            progressBar.style.width = data.progreso + '%';
+        }
+        });
     document.addEventListener("DOMContentLoaded", function () {
         const form = document.getElementById("uploadForm");
         const uploadStatus = document.getElementById("uploadStatus");
@@ -82,6 +90,7 @@
             const formData = new FormData();
             formData.append("name", document.getElementById("datasetName").value);
             formData.append("file", document.getElementById("datasetFile").files[0]);
+            formData.append("uuid", document.getElementById("uuidField").value);
             const csrfToken = document.querySelector('input[name="csrfmiddlewaretoken"]').value;
 
             uploadStatus.innerHTML = "";

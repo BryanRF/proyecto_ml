@@ -12,6 +12,8 @@
             color: yellow;
         }
     </style>
+    <input type="hidden" id="uuidField" name="uuid" value="">
+
     {% block extra_css %}{% endblock %}
 </head>
 <body>
@@ -32,10 +34,14 @@
                     </li>
                 </ul>
                 <div class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle  btn " href="#" id="notificationDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        <i class="bi bi-bell text-warning"></i>
-                        <span class="badge bg-danger" id="notificationCount">0</span>
-                    </a>
+                   
+                    <button type="button" class="btn btn-primary position-relative "   id="notificationDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="bi bi-bell-fill"></i>
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="inboxBadge">
+                          <span id="notificationCount">0</span>
+                        </span>
+                      </button>
+                      
                     <ul class="dropdown-menu dropdown-menu-end text-dark" aria-labelledby="notificationDropdown" id="notificationList">
                         <li class="dropdown-item-text" style="min-width: 500px;">
                             No hay notificaciones. 
@@ -50,24 +56,41 @@
     <div class="container mt-5">
         {% block content %}{% endblock %}
     </div>
-
+    <script src="https://cdn.jsdelivr.net/npm/uuid@8.3.2/dist/umd/uuid.min.js"></script>
+    <script>
+        // Generar UUID único
+        const uniqueId = uuid.v4();
+        // Asignar el UUID al campo hidden en tu formulario
+        document.getElementById('uuidField').value = uniqueId;
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         const Toast = Swal.mixin({
-            toast: true,
-            position: 'top-end',
-            showConfirmButton: true,
-            timer: 5000,
-            timerProgressBar: true,
-        });
+  toast: true,
+  position: 'bottom-start',
+  showConfirmButton: false,
+  timer: 10000, // Duración del toast en milisegundos
+  timerProgressBar: true,
+  customClass: {
+    container: 'my-swal-toast-container',
+    popup: 'my-swal-toast-popup',
+    title: 'my-swal-toast-title',
+    icon: 'my-swal-toast-icon',
+  },
+  didOpen: (toast) => {
+    toast.addEventListener('mouseenter', Swal.stopTimer);
+    toast.addEventListener('mouseleave', Swal.resumeTimer);
+  }
+});
+
         
         var notifications = []; // Array para almacenar las notificaciones
 
         function addNotification(data) {
             var now = new Date();
-            var time = now.toLocaleString('es-ES'); // Obtener la fecha y hora actual en formato local
+            var time = now.toLocaleString('es-PE'); // Obtener la fecha y hora actual en formato local
 
             notifications.push({ 
                 message: data.message, 
@@ -87,7 +110,7 @@
                 li.className = 'dropdown-item';
                 li.innerHTML = `
                     <span class="notification-content">${item.message}</span>
-                    <span  class="badge text-bg-secondary">${item.time}</span>
+                    <span  class="badge bg-secondary">${item.time}</span>
                     <button type="button" class="btn "  onclick="removeNotification(${index})"><i class="bi bi-trash"></i></button>
                 `;
                 notificationList.appendChild(li);
@@ -123,7 +146,7 @@
                 li.className = 'dropdown-item';
                 li.innerHTML = `
                     <span class="notification-content">${item.message}</span>
-                    <small class="text-muted">${item.time}</small>
+                    <span  class="badge bg-secondary">${item.time}</span>
                     <button type="button" class="btn-close" onclick="removeNotification(${index})"><i class="bi bi-trash"></i></button>
                 `;
                 notificationList.appendChild(li);
@@ -153,18 +176,31 @@
         });
 
         var channel = pusher.subscribe('my-channel');
-
+        
         // Escucha de eventos 'file_processed' para agregar notificaciones
-        channel.bind('file_processed', function(data) {
+        channel.bind(document.getElementById("uuidField").value, function(data) {
             addNotification(data);
+            var now = new Date();
+            var time = now.toLocaleString('es-PE'); 
+          
             Toast.fire({
                 icon: 'success',
                 title: 'Nueva Notificación!',
-                html: `<div style="max-width: 800px;">
-                    <p style="font-size: 16px;">${data.message}</p>
+                html: `<div >
+                    <p>${data.message}</p>
+                    <span  class="badge bg-secondary ">${time}</span>
                 </div>`
             });
         });
+
+        function toggleNotificationDropdown() {
+            var notificationDropdown = document.getElementById('notificationList');
+            if (notificationDropdown.classList.contains('show')) {
+                notificationDropdown.classList.remove('show');
+            } else {
+                notificationDropdown.classList.add('show');
+            }
+        }
     </script>
     
     {% block extra_js %}{% endblock %}

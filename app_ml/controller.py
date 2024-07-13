@@ -1,5 +1,5 @@
 # app_ml/views.py
-
+from datetime import datetime
 import os
 from django.http import HttpResponse
 from django.conf import settings
@@ -26,6 +26,27 @@ import joblib
 from django.core.files.storage import default_storage
 from pusher import Pusher
 
+def enviar_mensaje_pusher(channel, uuid, message, progreso=None):
+    pusher_client = Pusher(
+        app_id='1722267',
+        key='be0524da244ba0c38862',
+        secret='1af3100d62ea2b6d5c93',
+        cluster='sa1',
+        ssl=True
+    )
+
+    hora_actual = datetime.now()
+    hora_formateada = hora_actual.strftime('%d/%m/%Y, %H:%M:%S')
+
+    data = {
+        'message': message,
+        'hora': hora_formateada
+    }
+
+    if progreso is not None:
+        data['progreso'] = progreso
+
+    pusher_client.trigger(channel, uuid, data)
 class DatasetViewSet(viewsets.ModelViewSet):
     queryset = Dataset.objects.all()
     serializer_class = DatasetSerializer
@@ -33,6 +54,7 @@ class DatasetViewSet(viewsets.ModelViewSet):
     def train_dataset(self, request):
         name = request.data.get('name')
         dataset_file = request.FILES.get('file')
+        uuid = request.data.get('uuid') 
 
         if not dataset_file:
             return Response({'error': 'No se ha subido ningún archivo'}, status=status.HTTP_400_BAD_REQUEST)
@@ -59,28 +81,29 @@ class DatasetViewSet(viewsets.ModelViewSet):
 
                 # Entrenar todos los modelos
                 algorithms = {
-                    'SVM': train_svm, #10 -20 %
-                    'Naive Bayes': train_naive_bayes, #30 -40 %
-                    'Decision Tree': train_decision_tree, #50 -60 %
-                    'Logistic Regression': train_logistic_regression, #70 -80 %
-                    'Neural Network': train_neural_network, #90 -100 %
+                    'SVM': train_svm, #5 -15 %
+                    'Naive Bayes': train_naive_bayes, #20 -35 %
+                    'Decision Tree': train_decision_tree, #40 -55 %
+                    'Logistic Regression': train_logistic_regression, #60 -75 %
+                    'Neural Network': train_neural_network, #80 -95 %
                 }
 
                 results = {}
                 best_model = None
                 best_accuracy = 0
-                pusher_client = Pusher(
-                    app_id='1722267',
-                    key='be0524da244ba0c38862',
-                    secret='1af3100d62ea2b6d5c93',
-                    cluster='sa1',
-                    ssl=True
-                )
-
+                
+                progreso=0
                 for name, train_func in algorithms.items():
+                    hora_actual = datetime.now()
+                    progreso+=5
+                    print(f'Algoritmo en proceso {name}')
+                    enviar_mensaje_pusher('my-channel', uuid, f'Entrenamiento con el algoritmo {name} iniciado.', progreso)
+                    
                     result = train_func(X_train, y_train, X_test, y_test)
                     results[name] = result
-                    pusher_client.trigger('my-channel', 'file_processed', { 'message': f'Entrenamiento con el algoritmo {name} iniciado.'})
+                    
+               
+                    
                     # Guardar el resultado del entrenamiento
                     TrainingResult.objects.create(
                         dataset=dataset,
@@ -93,13 +116,16 @@ class DatasetViewSet(viewsets.ModelViewSet):
                         cpu_usage=result['cpu_usage'],
                         execution_time=result['execution_time']
                     )
-
-                    pusher_client.trigger('my-channel', 'file_processed', { 'message': f'Entrenamiento con el algoritmo {name} finalizado.'})
+                    
 
                     # Mantener el registro del mejor modelo
                     if result['accuracy'] > best_accuracy:
                         best_accuracy = result['accuracy']
                         best_model = result['model']
+                        
+                    progreso+=10
+                    enviar_mensaje_pusher('my-channel', uuid, f'Entrenamiento con el algoritmo {name} finalizado.', progreso)
+                    
 
                 # Guardar el mejor modelo
                 if best_model:
@@ -111,6 +137,7 @@ class DatasetViewSet(viewsets.ModelViewSet):
                 # Eliminar el archivo temporal
                 if os.path.exists(temp_path):
                     os.remove(temp_path)
+                enviar_mensaje_pusher('my-channel', uuid, f'El dataset {name} fue entrenado exitosamente.', 100)
 
                 return Response({'mensaje': 'Dataset entrenado exitosamente', 'creacion': dataset.id}, status=status.HTTP_201_CREATED)
 

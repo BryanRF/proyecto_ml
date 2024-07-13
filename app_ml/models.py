@@ -1,11 +1,9 @@
-# app_ml/models.py
-
 from django.db import models
 
 class Dataset(models.Model):
-    name = models.CharField(max_length=255)
+    name = models.CharField(max_length=255, unique=True)  # Hacemos que el nombre sea único
     file = models.FileField(upload_to='datasets/')
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True)  # Agregamos el campo created_at
     updated_at = models.DateTimeField(auto_now=True)
     is_active = models.BooleanField(default=True)
 
@@ -22,18 +20,18 @@ class TrainingResult(models.Model):
     auc = models.FloatField()
     cpu_usage = models.FloatField()
     execution_time = models.FloatField()
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True)  # Agregamos el campo created_at
     is_active = models.BooleanField(default=True)
 
     def __str__(self):
-        return f"{self.dataset.name} - {self.algorithm}"
+        return f"{self.dataset.name} - {self.algorithm} - {self.created_at}"
 
 class ClassificationResult(models.Model):
     dataset = models.ForeignKey(Dataset, on_delete=models.CASCADE)
     image = models.ImageField(upload_to='uploaded_images/')
     predicted_class = models.CharField(max_length=255)
     confidence = models.FloatField()
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True)  # Agregamos el campo created_at
     is_active = models.BooleanField(default=True)
 
     def __str__(self):

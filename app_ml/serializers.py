@@ -45,7 +45,7 @@ class DatasetViewSet(viewsets.ModelViewSet):
 
         # Extraer el archivo ZIP
         with zipfile.ZipFile(dataset.file.path, 'r') as zip_ref:
-            extract_path = os.path.join(settings.MEDIA_ROOT, 'datasets', dataset_name)
+            extract_path = os.path.join(settings.MEDIA_ROOT, 'media', dataset_name)
             zip_ref.extractall(extract_path)
 
         # Entrenar los modelos

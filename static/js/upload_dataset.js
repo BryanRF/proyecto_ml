@@ -51,6 +51,31 @@ document.addEventListener("DOMContentLoaded", function () {
           title: 'Éxito',
           text: 'Dataset subido y entrenado correctamente.'
         });
+        fetch(`/api/generate_report/?dataset_id=${data.creacion}`)
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error("Error al descargar el reporte");
+          }
+          return response.blob();
+        })
+        .then((blob) => {
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.style.display = 'none';
+          a.href = url;
+          a.download = `report_${data.creacion}.pdf`;
+          document.body.appendChild(a);
+          a.click();
+          window.URL.revokeObjectURL(url);
+        })
+        .catch((error) => {
+          console.error('Error al descargar el reporte:', error);
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Hubo un problema al descargar el reporte.'
+          });
+        });
       })
       .catch((error) => {
         clearInterval(timerInterval);

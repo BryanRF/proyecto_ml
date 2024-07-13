@@ -1,9 +1,14 @@
 # app_ml/utils/report_generation.py
 
+import io
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
 from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Image
+import matplotlib
+matplotlib.use('agg')  # Configurar matplotlib para utilizar el backend 'agg'
+import matplotlib.pyplot as plt
+import numpy as np
 
 def generate_report(results, output_path):
     doc = SimpleDocTemplate(output_path, pagesize=letter)
@@ -13,7 +18,7 @@ def generate_report(results, output_path):
     title_style = styles['Heading1']
     subtitle_style = styles['Heading2']
 
-    elements.append(Paragraph("Machine Learning Comparison Report", title_style))
+    elements.append(Paragraph("Informe comparativo de aprendizaje automático", title_style))
 
     for algorithm, metrics in results.items():
         elements.append(Paragraph(f"Results for {algorithm}", subtitle_style))
@@ -25,8 +30,8 @@ def generate_report(results, output_path):
             ["Recall", f"{metrics['recall']:.4f}"],
             ["F1 Score", f"{metrics['f1_score']:.4f}"],
             ["AUC", f"{metrics['auc']:.4f}"],
-            ["CPU Usage", f"{metrics['cpu_usage']:.2f}%"],
-            ["Execution Time", f"{metrics['execution_time']:.2f} seconds"]
+            ["Uso CPU", f"{metrics['cpu_usage']:.2f}%"],
+            ["Tiempo Ejecución", f"{metrics['execution_time']:.2f} seconds"]
         ]
 
         table = Table(data)
@@ -60,9 +65,11 @@ def generate_comparison_report(results, output_path):
     title_style = styles['Heading1']
     subtitle_style = styles['Heading2']
 
-    elements.append(Paragraph("Machine Learning Algorithms Comparison", title_style))
+    elements.append(Paragraph("Comparación de algoritmos de aprendizaje automático", title_style))
 
-    data = [["Algorithm", "Accuracy", "Precision", "Recall", "F1 Score", "AUC", "CPU Usage", "Execution Time"]]
+    # Create the comparison table
+    
+    data = [["Algoritmo", "Accuracy", "Precision", "Recall", "F1 Score", "AUC", "Uso CPU", "Tiempo E."]]
     
     for algorithm, metrics in results.items():
         data.append([
@@ -95,5 +102,35 @@ def generate_comparison_report(results, output_path):
     ]))
 
     elements.append(table)
+    elements.append(Paragraph("<br/><br/>", styles['Normal']))
+
+    # Create bar charts for each metric
+    metrics = ['accuracy', 'precision', 'recall', 'f1_score', 'auc', 'cpu_usage', 'execution_time']
+    
+    for metric in metrics:
+        plt.figure(figsize=(8, 4))
+        algorithms = list(results.keys())
+        values = [results[alg][metric] for alg in algorithms]
+        
+        plt.bar(algorithms, values)
+        plt.title(f'Comparación de {metric.replace("_", " ").title()}')
+        plt.xlabel('Algoritmos')
+        plt.ylabel(metric.replace("_", " ").title())
+        plt.xticks(rotation=45, ha='right')
+        plt.tight_layout()
+        
+        # Save the plot to a bytes buffer
+        buf = io.BytesIO()
+        plt.savefig(buf, format='png')
+        buf.seek(0)
+        
+        # Add the plot to the PDF
+        img = Image(buf)
+        img.drawHeight = 300
+        img.drawWidth = 500
+        elements.append(img)
+        elements.append(Paragraph("<br/><br/>", styles['Normal']))
+        
+        plt.close()
 
     doc.build(elements)

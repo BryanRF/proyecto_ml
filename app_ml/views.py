@@ -1,6 +1,7 @@
 # app_ml/views.py
 
 import os
+from django.http import HttpResponse
 from django.conf import settings
 from rest_framework import viewsets, status
 from django.core.files.base import ContentFile
@@ -16,6 +17,9 @@ from .ml_algorithms.naive_bayes import train_naive_bayes
 from .ml_algorithms.decision_tree import train_decision_tree
 from .utils.report_generation import generate_report, generate_comparison_report
 import zipfile
+from django.shortcuts import get_object_or_404
+from django.http import FileResponse
+from django.views.generic import View
 import joblib
 from django.core.files.storage import default_storage
 from pusher import Pusher
@@ -104,7 +108,7 @@ class DatasetViewSet(viewsets.ModelViewSet):
             default_storage.delete(temp_path)
 
         return Response({
-            'message': 'Dataset trained successfully',
+            'message': 'Dataset trained successfully','creacion':dataset.id
         
         }, status=status.HTTP_201_CREATED)
 class ClassificationViewSet(viewsets.ModelViewSet):
@@ -155,20 +159,20 @@ class ClassificationViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'])
     def generate_report(self, request):
-        dataset_id = request.query_params.get('dataset_id')
+        dataset_id = request.GET.get('dataset_id')
 
         if not dataset_id:
-            return Response({'error': 'dataset_id is required'}, status=status.HTTP_400_BAD_REQUEST)
+            return HttpResponse('dataset_id is required', status=400)
 
         try:
-            dataset = Dataset.objects.get(id=dataset_id)
+            dataset = get_object_or_404(Dataset, id=dataset_id)
         except Dataset.DoesNotExist:
-            return Response({'error': 'Dataset not found'}, status=status.HTTP_404_NOT_FOUND)
+            return HttpResponse('Dataset not found', status=404)
 
         training_results = TrainingResult.objects.filter(dataset=dataset)
 
         if not training_results:
-            return Response({'error': 'No training results found for this dataset'}, status=status.HTTP_404_NOT_FOUND)
+            return HttpResponse('No training results found for this dataset', status=404)
 
         results = {result.algorithm: {
             'accuracy': result.accuracy,
@@ -181,8 +185,14 @@ class ClassificationViewSet(viewsets.ModelViewSet):
         } for result in training_results}
 
         # Generate the report
-        report_path = os.path.join(settings.MEDIA_ROOT, 'reports', f'report_{dataset_id}.pdf')
+        report_path = os.path.join(settings.MEDIA_ROOT, 'media', f'report_{dataset_id}.pdf')
         generate_comparison_report(results, report_path)
 
-        # You might want to serve this file or return its URL
-        return Response({'message': 'Report generated successfully', 'report_path': report_path}, status=status.HTTP_200_OK)
+        # Serve the file for download
+        try:
+            with open(report_path, 'rb') as f:
+                response = HttpResponse(f.read(), content_type='application/pdf')
+                response['Content-Disposition'] = f'attachment; filename=report_{dataset_id}.pdf'
+                return response
+        except IOError:
+            return HttpResponse('Could not read the report file', status=500)

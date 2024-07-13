@@ -48,11 +48,11 @@ class DatasetViewSet(viewsets.ModelViewSet):
 
             # Train all models
             algorithms = {
-                'Logistic Regression': train_logistic_regression,
-                'Neural Network': train_neural_network,
                 'SVM': train_svm,
                 'Naive Bayes': train_naive_bayes,
-                'Decision Tree': train_decision_tree
+                'Decision Tree': train_decision_tree,
+                'Logistic Regression': train_logistic_regression,
+                'Neural Network': train_neural_network,
             }
 
             results = {}

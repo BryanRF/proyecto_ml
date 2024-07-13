@@ -11,8 +11,8 @@ class DatasetAdmin(admin.ModelAdmin):
 
 @admin.register(TrainingResult)
 class TrainingResultAdmin(admin.ModelAdmin):
-    list_display = ('dataset', 'algorithm', 'accuracy', 'precision', 'recall', 'f1_score', 'auc', 'is_active')
-    list_filter = ('algorithm', 'is_active', 'created_at')
+    list_display = ('dataset', 'algorithm', 'accuracy', 'precision', 'recall', 'f1_score', 'auc',  'created_at','is_active',)
+    list_filter = ('algorithm', 'created_at', 'is_active')
     search_fields = ('dataset__name', 'algorithm')
 
 @admin.register(ClassificationResult)

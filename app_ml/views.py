@@ -58,7 +58,13 @@ class DatasetViewSet(viewsets.ModelViewSet):
             results = {}
             best_model = None
             best_accuracy = 0
-
+            pusher_client = Pusher(
+                    app_id='1722267',
+                    key='be0524da244ba0c38862',
+                    secret='1af3100d62ea2b6d5c93',
+                    cluster='sa1',
+                    ssl=True
+                )
             for name, train_func in algorithms.items():
                 result = train_func(X_train, y_train, X_test, y_test)
                 results[name] = result
@@ -75,13 +81,7 @@ class DatasetViewSet(viewsets.ModelViewSet):
                     cpu_usage=result['cpu_usage'],
                     execution_time=result['execution_time']
                 )
-                pusher_client = Pusher(
-        app_id='1722267',
-        key='be0524da244ba0c38862',
-        secret='1af3100d62ea2b6d5c93',
-        cluster='sa1',
-        ssl=True
-    )
+       
                 pusher_client.trigger('my-channel', 'file_processed', {'count': 100, 'algorithm': name})
 
                 # Keep track of the best model
@@ -105,8 +105,7 @@ class DatasetViewSet(viewsets.ModelViewSet):
 
         return Response({
             'message': 'Dataset trained successfully',
-            'dataset_id': dataset.id,
-            'results': results
+        
         }, status=status.HTTP_201_CREATED)
 class ClassificationViewSet(viewsets.ModelViewSet):
     queryset = ClassificationResult.objects.all()

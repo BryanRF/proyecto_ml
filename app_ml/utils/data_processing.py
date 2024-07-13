@@ -47,7 +47,7 @@ def load_and_preprocess_data(file_list, zip_file):
 
         # Actualizar el progreso y enviar notificación cada 50 archivos
         processed_files += 1
-        print (processed_files)
+ 
    
     images = np.array(images)
     labels = np.array(labels)

@@ -1,7 +1,7 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import DatasetViewSet, ClassificationViewSet
-from . import views
+from .controller import DatasetViewSet, ClassificationViewSet
+from . import controller
 
 router = DefaultRouter()
 router.register(r'datasets', DatasetViewSet)

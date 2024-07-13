@@ -105,7 +105,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/4.1/topics/i18n/
 
-LANGUAGE_CODE = 'es-es'  # Cambiamos a español (código para español en España)
+LANGUAGE_CODE = 'es-pe'  # Cambiamos a español (código para español en España)
 
 TIME_ZONE = 'America/Lima'  # Configuramos la zona horaria para Lima, Perú
 

@@ -2,7 +2,8 @@ from django.db import models
 
 class Dataset(models.Model):
     name = models.CharField(max_length=255, unique=True)  # Hacemos que el nombre sea único
-    file = models.FileField(upload_to='media/')
+    file = models.FileField(upload_to='media/', null=True, blank=True, default=None)
+    best_model_path = models.FileField(upload_to='media/', null=True, blank=True, default=None)
     created_at = models.DateTimeField(auto_now_add=True)  # Agregamos el campo created_at
     updated_at = models.DateTimeField(auto_now=True)
     is_active = models.BooleanField(default=True)

@@ -27,11 +27,13 @@ Este proyecto utiliza Django y Django REST Framework para clasificar imágenes u
 
    ```bash
    python -m venv venv
-
+```
    # En sistemas Linux/Mac
+     ```bash
    source venv/bin/activate
-
+```
    # En Windows
+     ```bash
    venv\Scripts\activate
    ```
 

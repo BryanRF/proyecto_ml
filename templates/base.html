@@ -111,7 +111,7 @@
                 li.innerHTML = `
                     <span class="notification-content">${item.message}</span>
                     <span  class="badge bg-secondary">${item.time}</span>
-                    <button type="button" class="btn "  onclick="removeNotification(${index})"><i class="bi bi-trash"></i></button>
+                    <button type="button" class="btn btn-danger "  onclick="removeNotification(${index})"><i class="bi bi-trash"></i></button>
                 `;
                 notificationList.appendChild(li);
 
@@ -147,7 +147,7 @@
                 li.innerHTML = `
                     <span class="notification-content">${item.message}</span>
                     <span  class="badge bg-secondary">${item.time}</span>
-                    <button type="button" class="btn-close" onclick="removeNotification(${index})"><i class="bi bi-trash"></i></button>
+                    <button type="button" class="btn btn-danger"  onclick="removeNotification(${index})"><i class="bi bi-trash"></i></button>
                 `;
                 notificationList.appendChild(li);
 

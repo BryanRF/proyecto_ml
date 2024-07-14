@@ -1,7 +1,7 @@
 # app_ml/admin.py
 
 from django.contrib import admin
-from .models import Dataset, TrainingResult, ClassificationResult
+from .models import Dataset, DatasetClass, TrainingResult, ClassificationResult
 
 @admin.register(Dataset)
 class DatasetAdmin(admin.ModelAdmin):
@@ -9,9 +9,14 @@ class DatasetAdmin(admin.ModelAdmin):
     list_filter = ('is_active', 'created_at', 'updated_at')
     search_fields = ('name',)
 
+@admin.register(DatasetClass)
+class DatasetClassAdmin(admin.ModelAdmin):
+    list_display = ('dataset', 'name', 'index')
+    search_fields = ('dataset__name', 'name',)
+
 @admin.register(TrainingResult)
 class TrainingResultAdmin(admin.ModelAdmin):
-    list_display = ('dataset', 'algorithm', 'accuracy', 'precision', 'recall', 'f1_score', 'auc',  'created_at','is_active',)
+    list_display = ('dataset', 'algorithm', 'accuracy', 'precision', 'recall', 'f1_score', 'auc', 'created_at', 'is_active',)
     list_filter = ('algorithm', 'created_at', 'is_active')
     search_fields = ('dataset__name', 'algorithm')
 

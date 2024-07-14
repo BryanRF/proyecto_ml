@@ -51,12 +51,11 @@ def load_and_preprocess_data(file_list, zip_file):
    
     images = np.array(images)
     labels = np.array(labels)
+    print('labels')
+    print(labels)
 
-    # Preprocesar etiquetas
-    le = LabelEncoder()
-    labels = le.fit_transform(labels)
-
+    # Ya no necesitamos LabelEncoder aquí
     # Dividir en conjuntos de entrenamiento y prueba
     X_train, X_test, y_train, y_test = train_test_split(images, labels, test_size=0.2, random_state=42)
 
-    return X_train, X_test, y_train, y_test, le
+    return X_train, X_test, y_train, y_test, None  # Retornamos None en lugar de le

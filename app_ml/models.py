@@ -11,6 +11,17 @@ class Dataset(models.Model):
     def __str__(self):
         return self.name
 
+class DatasetClass(models.Model):
+    dataset = models.ForeignKey(Dataset, related_name='classes', on_delete=models.CASCADE)
+    name = models.CharField(max_length=255)
+    index = models.IntegerField()
+
+    class Meta:
+        unique_together = ('dataset', 'index')
+
+    def __str__(self):
+        return f"{self.dataset.name} - {self.name} ({self.index})"
+    
 class TrainingResult(models.Model):
     dataset = models.ForeignKey(Dataset, on_delete=models.CASCADE)
     algorithm = models.CharField(max_length=100)
@@ -30,7 +41,7 @@ class TrainingResult(models.Model):
 class ClassificationResult(models.Model):
     dataset = models.ForeignKey(Dataset, on_delete=models.CASCADE)
     image = models.ImageField(upload_to='uploaded_images/')
-    predicted_class = models.CharField(max_length=255)
+    predicted_class = models.ForeignKey(DatasetClass, on_delete=models.CASCADE)
     confidence = models.FloatField()
     created_at = models.DateTimeField(auto_now_add=True)  # Agregamos el campo created_at
     is_active = models.BooleanField(default=True)

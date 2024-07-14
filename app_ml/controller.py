@@ -1,13 +1,14 @@
 # app_ml/views.py
 from datetime import datetime
 import os
+import numpy as np
 from django.http import HttpResponse
 from django.conf import settings
 from rest_framework import viewsets, status
 from django.core.files.base import ContentFile
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from .models import Dataset, TrainingResult, ClassificationResult
+from .models import *
 from .serializers import DatasetSerializer, TrainingResultSerializer, ClassificationResultSerializer
 from .utils.data_processing import load_and_preprocess_data, preprocess_single_image
 from .ml_algorithms.logistic_regression import train_logistic_regression
@@ -53,11 +54,12 @@ class DatasetViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['post'])
     def train_dataset(self, request):
         name = request.data.get('name')
+        datasetname = request.data.get('name')
         dataset_file = request.FILES.get('file')
         uuid = request.data.get('uuid') 
 
         if not dataset_file:
-            return Response({'error': 'No se ha subido ningún archivo'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'mensaje': 'No se ha subido ningún archivo'}, status=status.HTTP_201_CREATED)
         temp_path = default_storage.save('temp_dataset.zip', ContentFile(dataset_file.read()))
 
         try:
@@ -67,6 +69,7 @@ class DatasetViewSet(viewsets.ModelViewSet):
                 # Procesar el archivo
                 with zipfile.ZipFile(default_storage.path(temp_path), 'r') as zip_file:
                     file_list = zip_file.namelist()
+                    print(file_list)
 
                     # Cargar y preprocesar los datos
                     X_train, X_test, y_train, y_test, le = load_and_preprocess_data(file_list, zip_file)
@@ -74,12 +77,14 @@ class DatasetViewSet(viewsets.ModelViewSet):
                 # Verificar si ya existe un dataset con el mismo nombre
                 existing_dataset = Dataset.objects.filter(name=name).exists()
                 if existing_dataset:
-                    return Response({'error': 'Ya existe un dataset con este nombre'}, status=status.HTTP_400_BAD_REQUEST)
+                    return Response({'mensaje': 'Ya existe un dataset con este nombre'}, status=status.HTTP_201_CREATED)
 
                 # Crear una nueva entrada de dataset
                 dataset = Dataset.objects.create(name=name)
-
-                # Entrenar todos los modelos
+                unique_classes = np.unique(np.concatenate((y_train, y_test)))
+                for index, class_name in enumerate(unique_classes):
+                    DatasetClass.objects.create(dataset=dataset, name=class_name, index=index)
+                                # Entrenar todos los modelos
                 algorithms = {
                     'SVM': train_svm, #5 -15 %
                     'Naive Bayes': train_naive_bayes, #20 -35 %
@@ -129,25 +134,25 @@ class DatasetViewSet(viewsets.ModelViewSet):
 
                 # Guardar el mejor modelo
                 if best_model:
-                    model_path = f'mejor_modelo_{dataset.id}.joblib'
-                    joblib.dump(best_model, model_path)
+                    model_path = f'media/mejor_modelo_{dataset.id}.joblib'
+                    joblib.dump(best_model, os.path.join(settings.MEDIA_ROOT, model_path))
                     dataset.best_model_path = model_path
                     dataset.save()
 
                 # Eliminar el archivo temporal
                 if os.path.exists(temp_path):
                     os.remove(temp_path)
-                enviar_mensaje_pusher('my-channel', uuid, f'El dataset {name} fue entrenado exitosamente.', 100)
+                enviar_mensaje_pusher('my-channel', uuid, f'El dataset {datasetname} fue entrenado exitosamente.', 100)
 
                 return Response({'mensaje': 'Dataset entrenado exitosamente', 'creacion': dataset.id}, status=status.HTTP_201_CREATED)
 
         except IntegrityError:
-            return Response({'error': 'Ya existe un dataset con este nombre'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'mensaje': 'Ya existe un dataset con este nombre'}, status=status.HTTP_201_CREATED)
 
         except Exception as e:
             if os.path.exists(temp_path):
                 os.remove(temp_path)
-            return Response({'error': f'Error procesando el dataset: {str(e)}'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'mensaje': f'Error procesando el dataset: {str(e)}'}, status=status.HTTP_201_CREATED)
     
     
 class ClassificationViewSet(viewsets.ModelViewSet):
@@ -160,39 +165,43 @@ class ClassificationViewSet(viewsets.ModelViewSet):
         dataset_id = request.data.get('dataset_id')
 
         if not image or not dataset_id:
-            return Response({'error': 'Image and dataset_id are required'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'mensaje': 'Requiere dataset seleccionado'}, status=status.HTTP_201_CREATED)
 
         try:
             dataset = Dataset.objects.get(id=dataset_id)
         except Dataset.DoesNotExist:
-            return Response({'error': 'Dataset not found'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'mensaje': 'Dataset no encontrado'}, status=status.HTTP_201_CREATED)
 
         if not dataset.best_model_path:
-            return Response({'error': 'No trained model available for this dataset'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'mensaje': 'El modelo del dataset fue eliminado'}, status=status.HTTP_201_CREATED)
 
-        # Load the best model
+        # cargamos mejor modelo
         best_model = joblib.load(dataset.best_model_path)
 
-        # Preprocess the image
+        # Procesamos imagen
         X = preprocess_single_image(image)
 
         if X is None:
-            return Response({'error': 'Error processing the image'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'mensaje': 'Error processing the image'}, status=status.HTTP_201_CREATED)
 
-        # Classify the image
+        # Clasifciamos imagen
         prediction = best_model.predict(X)[0]
         confidence = best_model.predict_proba(X)[0].max()
+        
+        try:
+            predicted_class = DatasetClass.objects.get(dataset=dataset, name=prediction)
+        except DatasetClass.DoesNotExist:
+            return Response({'mensaje': 'Predicted class not found'}, status=status.HTTP_201_CREATED)
 
-        # Save the classification result
         classification = ClassificationResult.objects.create(
             dataset=dataset,
             image=image,
-            predicted_class=prediction,
+            predicted_class=predicted_class,
             confidence=confidence
         )
 
         return Response({
-            'predicted_class': prediction,
+            'predicted_class': predicted_class.name,
             'confidence': confidence
         }, status=status.HTTP_200_OK)
 
@@ -201,15 +210,14 @@ class ClassificationViewSet(viewsets.ModelViewSet):
         dataset_id = request.GET.get('dataset_id')
 
         if not dataset_id:
-            return Response({'error': 'dataset_id is required'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'mensaje': 'dataset_id is required'}, status=status.HTTP_201_CREATED)
 
         try:
             dataset = get_object_or_404(Dataset, id=dataset_id)
         except Dataset.DoesNotExist:
-            return Response({'error': 'Dataset not found'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'mensaje': 'Dataset not found'}, status=status.HTTP_201_CREATED)
 
         if dataset.file and os.path.exists(os.path.join(settings.MEDIA_ROOT, dataset.file.name)):
-            # Serve the existing report file
             report_path = os.path.join(settings.MEDIA_ROOT, dataset.file.name)
             return FileResponse(
                 open(report_path, 'rb'),
@@ -220,7 +228,7 @@ class ClassificationViewSet(viewsets.ModelViewSet):
             training_results = TrainingResult.objects.filter(dataset=dataset)
 
             if not training_results:
-                return Response({'error': 'No training results found for this dataset'}, status=status.HTTP_404_NOT_FOUND)
+                return Response({'mensaje': 'No training results found for this dataset'}, status=status.HTTP_201_CREATED)
 
             results = {result.algorithm: {
                 'accuracy': result.accuracy,
@@ -232,16 +240,14 @@ class ClassificationViewSet(viewsets.ModelViewSet):
                 'execution_time': result.execution_time
             } for result in training_results}
 
-            # Generate the report
             report_path = os.path.join(settings.MEDIA_ROOT, 'media', f'report_{dataset_id}.pdf')
             try:
                 generate_comparison_report(results, report_path)
                 dataset.file = f'media/reporte_{dataset_id}.pdf'  # Actualizamos el campo file con la ruta del PDF
                 dataset.save()
             except Exception as e:
-                return Response({'error': f'Error generating report: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                return Response({'mensaje': f'Error generating report: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-            # Serve the newly created report file
             if os.path.exists(report_path):
                 return FileResponse(
                     open(report_path, 'rb'),
@@ -249,4 +255,4 @@ class ClassificationViewSet(viewsets.ModelViewSet):
                     filename=f'reporte_{dataset_id}.pdf'
                 )
             else:
-                return Response({'error': 'Report file not found'}, status=status.HTTP_404_NOT_FOUND)
+                return Response({'mensaje': 'Report file not found'}, status=status.HTTP_201_CREATED)

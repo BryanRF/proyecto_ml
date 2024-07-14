@@ -11,6 +11,10 @@
         .navbar-toggler-icon.custom-color {
             color: yellow;
         }
+        .dropdown-menu.scrollable-menu {
+            max-height: 200px;
+            overflow-y: auto;
+        }
     </style>
     <input type="hidden" id="uuidField" name="uuid" value="">
 
@@ -34,20 +38,17 @@
                     </li>
                 </ul>
                 <div class="nav-item dropdown">
-                   
-                    <button type="button" class="btn btn-primary position-relative "   id="notificationDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <button type="button" class="btn btn-primary position-relative" id="notificationDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                         <i class="bi bi-bell-fill"></i>
                         <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="inboxBadge">
-                          <span id="notificationCount">0</span>
+                            <span id="notificationCount">0</span>
                         </span>
-                      </button>
-                      
-                    <ul class="dropdown-menu dropdown-menu-end text-dark" aria-labelledby="notificationDropdown" id="notificationList">
-                        <li class="dropdown-item-text" style="min-width: 500px;">
-                            No hay notificaciones. 
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end text-dark scrollable-menu" aria-labelledby="notificationDropdown" id="notificationList">
+                        <li class="dropdown-item-text">
+                            No hay notificaciones.
                         </li>
                     </ul>
-                    
                 </div>
             </div>
         </div>
@@ -56,6 +57,7 @@
     <div class="container mt-5">
         {% block content %}{% endblock %}
     </div>
+
     <script src="https://cdn.jsdelivr.net/npm/uuid@8.3.2/dist/umd/uuid.min.js"></script>
     <script>
         // Generar UUID único
@@ -68,25 +70,24 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         const Toast = Swal.mixin({
-  toast: true,
-  position: 'bottom-start',
-  showConfirmButton: false,
-  timer: 10000, // Duración del toast en milisegundos
-  timerProgressBar: true,
-  customClass: {
-    container: 'my-swal-toast-container',
-    popup: 'my-swal-toast-popup',
-    title: 'my-swal-toast-title',
-    icon: 'my-swal-toast-icon',
-  },
-  didOpen: (toast) => {
-    toast.addEventListener('mouseenter', Swal.stopTimer);
-    toast.addEventListener('mouseleave', Swal.resumeTimer);
-  }
-});
+            toast: true,
+            position: 'bottom-start',
+            showConfirmButton: false,
+            timer: 10000, // Duración del toast en milisegundos
+            timerProgressBar: true,
+            customClass: {
+                container: 'my-swal-toast-container',
+                popup: 'my-swal-toast-popup',
+                title: 'my-swal-toast-title',
+                icon: 'my-swal-toast-icon',
+            },
+            didOpen: (toast) => {
+                toast.addEventListener('mouseenter', Swal.stopTimer);
+                toast.addEventListener('mouseleave', Swal.resumeTimer);
+            }
+        });
 
-        
-        var notifications = []; // Array para almacenar las notificaciones
+        var notifications = JSON.parse(localStorage.getItem('notifications')) || []; // Array para almacenar las notificaciones
 
         function addNotification(data) {
             var now = new Date();
@@ -98,10 +99,30 @@
                 time: time  // Guardar la fecha y hora de la notificación
             });
 
-            // Actualizar contador de notificaciones
+            // Guardar las notificaciones en localStorage
+            localStorage.setItem('notifications', JSON.stringify(notifications));
+
+            // Actualizar el contador de notificaciones
             document.getElementById('notificationCount').textContent = notifications.length;
 
-            // Limpiar y agregar notificaciones activas
+            // Actualizar la lista de notificaciones
+            updateNotificationList();
+        }
+
+        function removeNotification(index) {
+            notifications.splice(index, 1); // Eliminar notificación del array
+
+            // Guardar las notificaciones en localStorage
+            localStorage.setItem('notifications', JSON.stringify(notifications));
+
+            // Actualizar el contador de notificaciones
+            document.getElementById('notificationCount').textContent = notifications.length;
+
+            // Actualizar la lista de notificaciones
+            updateNotificationList();
+        }
+
+        function updateNotificationList() {
             var notificationList = document.getElementById('notificationList');
             notificationList.innerHTML = ''; // Limpiar lista
 
@@ -110,8 +131,8 @@
                 li.className = 'dropdown-item';
                 li.innerHTML = `
                     <span class="notification-content">${item.message}</span>
-                    <span  class="badge bg-secondary">${item.time}</span>
-                    <button type="button" class="btn btn-danger "  onclick="removeNotification(${index})"><i class="bi bi-trash"></i></button>
+                    <span class="badge bg-secondary">${item.time}</span>
+                    <button type="button" class="btn btn-danger btn-sm ms-2" onclick="removeNotification(${index})"><i class="bi bi-trash"></i></button>
                 `;
                 notificationList.appendChild(li);
 
@@ -131,43 +152,11 @@
             }
         }
 
-        function removeNotification(index) {
-            notifications.splice(index, 1); // Eliminar notificación del array
-
-            // Actualizar contador de notificaciones
+        // Inicializar la lista de notificaciones al cargar la página
+        document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('notificationCount').textContent = notifications.length;
-
-            // Limpiar y reagregar notificaciones activas
-            var notificationList = document.getElementById('notificationList');
-            notificationList.innerHTML = '';
-
-            notifications.forEach(function(item, index) {
-                var li = document.createElement('li');
-                li.className = 'dropdown-item';
-                li.innerHTML = `
-                    <span class="notification-content">${item.message}</span>
-                    <span  class="badge bg-secondary">${item.time}</span>
-                    <button type="button" class="btn btn-danger"  onclick="removeNotification(${index})"><i class="bi bi-trash"></i></button>
-                `;
-                notificationList.appendChild(li);
-
-                if (index !== notifications.length - 1) {
-                    // Agregar separador
-                    var divider = document.createElement('li');
-                    divider.className = 'dropdown-divider';
-                    notificationList.appendChild(divider);
-                }
-            });
-
-            if (notifications.length === 0) {
-                var noNotificationsLi = document.createElement('li');
-                noNotificationsLi.className = 'dropdown-item-text';
-                noNotificationsLi.textContent = 'No hay notificaciones';
-                notificationList.appendChild(noNotificationsLi);
-            }
-        }
-
-        // Configuración de SweetAlert2
+            updateNotificationList();
+        });
 
         // Configuración de Pusher
         Pusher.logToConsole = true;
@@ -176,19 +165,19 @@
         });
 
         var channel = pusher.subscribe('my-channel');
-        
+
         // Escucha de eventos 'file_processed' para agregar notificaciones
-        channel.bind(document.getElementById("uuidField").value, function(data) {
+        channel.bind(document.getElementById('uuidField').value, function(data) {
             addNotification(data);
             var now = new Date();
             var time = now.toLocaleString('es-PE'); 
-          
+
             Toast.fire({
                 icon: 'success',
                 title: 'Nueva Notificación!',
-                html: `<div >
+                html: `<div>
                     <p>${data.message}</p>
-                    <span  class="badge bg-secondary ">${time}</span>
+                    <span class="badge bg-secondary">${time}</span>
                 </div>`
             });
         });

@@ -18,7 +18,7 @@ def rename_images_in_directory(directory, start_number=1):
                 count += 1
 
 # Ruta de la carpeta principal que contiene las tres carpetas con subcarpetas
-main_directory = 'C:/Users/rfrey/Downloads/archive'
+main_directory = 'C:/Users/admin/Downloads/archive'
 
 # Llamada a la función para renombrar imágenes en la carpeta principal y subcarpetas
 rename_images_in_directory(main_directory)

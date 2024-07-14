@@ -1,4 +1,3 @@
-# app_ml/ml_algorithms/svm.py
 
 from sklearn.svm import SVC
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score

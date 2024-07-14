@@ -182,7 +182,7 @@ class ClassificationViewSet(viewsets.ModelViewSet):
         X = preprocess_single_image(image)
 
         if X is None:
-            return Response({'mensaje': 'Error processing the image'}, status=status.HTTP_201_CREATED)
+            return Response({'mensaje': 'Error al procesar la imagen'}, status=status.HTTP_201_CREATED)
 
         # Clasifciamos imagen
         prediction = best_model.predict(X)[0]
@@ -191,7 +191,7 @@ class ClassificationViewSet(viewsets.ModelViewSet):
         try:
             predicted_class = DatasetClass.objects.get(dataset=dataset, name=prediction)
         except DatasetClass.DoesNotExist:
-            return Response({'mensaje': 'Predicted class not found'}, status=status.HTTP_201_CREATED)
+            return Response({'mensaje': 'La prediccion no tiene clases registradas vuelve a entrenar otro dataset'}, status=status.HTTP_201_CREATED)
 
         classification = ClassificationResult.objects.create(
             dataset=dataset,
@@ -210,12 +210,12 @@ class ClassificationViewSet(viewsets.ModelViewSet):
         dataset_id = request.GET.get('dataset_id')
 
         if not dataset_id:
-            return Response({'mensaje': 'dataset_id is required'}, status=status.HTTP_201_CREATED)
+            return Response({'mensaje': 'Se requiere un dataset seleccionado'}, status=status.HTTP_201_CREATED)
 
         try:
             dataset = get_object_or_404(Dataset, id=dataset_id)
         except Dataset.DoesNotExist:
-            return Response({'mensaje': 'Dataset not found'}, status=status.HTTP_201_CREATED)
+            return Response({'mensaje': 'Dataset no encontrado'}, status=status.HTTP_201_CREATED)
 
         if dataset.file and os.path.exists(os.path.join(settings.MEDIA_ROOT, dataset.file.name)):
             report_path = os.path.join(settings.MEDIA_ROOT, dataset.file.name)
@@ -228,7 +228,7 @@ class ClassificationViewSet(viewsets.ModelViewSet):
             training_results = TrainingResult.objects.filter(dataset=dataset)
 
             if not training_results:
-                return Response({'mensaje': 'No training results found for this dataset'}, status=status.HTTP_201_CREATED)
+                return Response({'mensaje': 'No se encontraron datos entrenados'}, status=status.HTTP_201_CREATED)
 
             results = {result.algorithm: {
                 'accuracy': result.accuracy,
@@ -246,7 +246,7 @@ class ClassificationViewSet(viewsets.ModelViewSet):
                 dataset.file = f'media/reporte_{dataset_id}.pdf'  # Actualizamos el campo file con la ruta del PDF
                 dataset.save()
             except Exception as e:
-                return Response({'mensaje': f'Error generating report: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                return Response({'mensaje': f'Error al generar reporte: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
             if os.path.exists(report_path):
                 return FileResponse(
@@ -255,4 +255,4 @@ class ClassificationViewSet(viewsets.ModelViewSet):
                     filename=f'reporte_{dataset_id}.pdf'
                 )
             else:
-                return Response({'mensaje': 'Report file not found'}, status=status.HTTP_201_CREATED)
+                return Response({'mensaje': 'Error de sistema '}, status=status.HTTP_201_CREATED)

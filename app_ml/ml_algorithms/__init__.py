@@ -28,7 +28,7 @@ def load_dataset(dataset_path):
                 print(image_name)
                 image_path = os.path.join(class_path, image_name)
                 image = Image.open(image_path).convert('RGB')
-                image = image.resize((64, 64))  # Resize for consistency
+                image = image.resize((64, 64)) 
                 X.append(np.array(image).flatten())
                 y.append(class_name)
     

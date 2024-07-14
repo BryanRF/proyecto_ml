@@ -1,4 +1,3 @@
-# app_ml/ml_algorithms/naive_bayes.py
 
 from sklearn.naive_bayes import GaussianNB
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score

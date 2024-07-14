@@ -41,11 +41,7 @@ Las dependencias del proyecto están listadas en el archivo `requirements.txt`. 
 
     ```bash
     pip freeze > requirements.txt
-    ```
-Para instalar nuevas librerias:
-
-   ```bash
-   pip install -r requirements.txt
+    pip install -r requirements.txt
    ```
 
 4. **Configurar variables de entorno:**
@@ -148,6 +144,3 @@ Si deseas contribuir al proyecto:
 3. Publica la rama y crea un Pull Request desde la interfaz de GitHub.
 
 ¡Gracias por contribuir!
-```
-
-Puedes guardar este contenido directamente como un archivo llamado "README.md" en la carpeta raíz de tu proyecto. Este archivo proporcionará una guía completa para cualquier persona que quiera configurar y ejecutar tu proyecto Django de clasificación de imágenes.

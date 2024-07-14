@@ -1,6 +1,3 @@
-
-
-```markdown
 # Proyecto Django de Clasificación de Imágenes
 
 Este proyecto utiliza Django y Django REST Framework para clasificar imágenes utilizando varios algoritmos de machine learning.

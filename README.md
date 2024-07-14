@@ -44,7 +44,6 @@ Este proyecto utiliza Django y Django REST Framework para clasificar imágenes u
     Las dependencias del proyecto están listadas en el archivo 'requirements.txt'. Para generar o actualizar este archivo, ejecuta el siguiente comando en tu entorno virtual:
 
     ```bash
-    pip freeze > requirements.txt
     pip install -r requirements.txt
     ```
 

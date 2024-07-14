@@ -37,7 +37,7 @@ Este proyecto utiliza Django y Django REST Framework para clasificar imágenes u
 3. **Instalar las dependencias del proyecto:**
 
 
-Las dependencias del proyecto están listadas en el archivo `requirements.txt`. Para generar o actualizar este archivo, ejecuta el siguiente comando en tu entorno virtual:
+    Las dependencias del proyecto están listadas en el archivo 'requirements.txt'. Para generar o actualizar este archivo, ejecuta el siguiente comando en tu entorno virtual:
 
     ```bash
     pip freeze > requirements.txt
@@ -65,8 +65,7 @@ Sigue las instrucciones en la consola para crear un superusuario con acceso al p
 
 ### Ejecutar el servidor de desarrollo
 
-Para ejecutar el servidor de desarrollo de Django:
-
+    Para ejecutar el servidor de desarrollo de Django:
     ```bash
     python manage.py runserver
     ```
@@ -108,7 +107,7 @@ urlpatterns = [
 
 ## Modelos y Migraciones
 
-El proyecto utiliza modelos de Django para representar los datos. Cuando se realizan cambios en los modelos (en `models.py`), es necesario crear y aplicar migraciones:
+    El proyecto utiliza modelos de Django para representar los datos. Cuando se realizan cambios en los modelos (en `models.py`), es necesario crear y aplicar migraciones:
 
 1. Crear migraciones después de cambios en los modelos:
    ```bash

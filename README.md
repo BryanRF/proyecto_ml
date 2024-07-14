@@ -42,25 +42,24 @@ Las dependencias del proyecto están listadas en el archivo `requirements.txt`. 
     ```bash
     pip freeze > requirements.txt
     pip install -r requirements.txt
-   ```
+    ```
 
 4. **Configurar variables de entorno:**
    Crea un archivo `.env` en la raíz del proyecto y configura las variables necesarias, como claves secretas y configuraciones específicas.
 
 5. **Aplicar migraciones de la base de datos:**
-
-   ```bash
-   python manage.py makemigrations
-   python manage.py migrate
-   ```
+    ```bash
+    python manage.py makemigrations
+    python manage.py migrate
+    ```
 
 6. **Crear un superusuario:**
 
-   ```bash
-   python manage.py createsuperuser
-   ```
+    ```bash
+    python manage.py createsuperuser
+    ```
 
-   Sigue las instrucciones en la consola para crear un superusuario con acceso al panel de administración.
+Sigue las instrucciones en la consola para crear un superusuario con acceso al panel de administración.
 
 ## Ejecución
 
@@ -68,9 +67,9 @@ Las dependencias del proyecto están listadas en el archivo `requirements.txt`. 
 
 Para ejecutar el servidor de desarrollo de Django:
 
-```bash
-python manage.py runserver
-```
+    ```bash
+    python manage.py runserver
+    ```
 
 Esto iniciará el servidor en `http://localhost:8000/`.
 

@@ -131,7 +131,7 @@ class DatasetViewSet(viewsets.ModelViewSet):
                 if best_model:
                     model_path = f'mejor_modelo_{dataset.id}.joblib'
                     joblib.dump(best_model, model_path)
-                    dataset.mejor_modelo_ruta = model_path
+                    dataset.best_model_path = model_path
                     dataset.save()
 
                 # Eliminar el archivo temporal

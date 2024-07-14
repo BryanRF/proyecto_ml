@@ -22,17 +22,17 @@ Este proyecto utiliza Django y Django REST Framework para clasificar imágenes u
 
 2. **Crear y activar un entorno virtual:**
 
-   ```bash
-   python -m venv venv
-```
+    ```bash
+    python -m venv venv
+    ```
    # En sistemas Linux/Mac
-     ```bash
-   source venv/bin/activate
-```
+    ```bash
+    source venv/bin/activate
+    ```
    # En Windows
-     ```bash
-   venv\Scripts\activate
-   ```
+    ```bash
+    venv\Scripts\activate
+    ```
 
 3. **Instalar las dependencias del proyecto:**
 
@@ -42,7 +42,8 @@ Las dependencias del proyecto están listadas en el archivo `requirements.txt`. 
     ```bash
     pip freeze > requirements.txt
     ```
-    Para instalar nuevas librerias:
+Para instalar nuevas librerias:
+
    ```bash
    pip install -r requirements.txt
    ```

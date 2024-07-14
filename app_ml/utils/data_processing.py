@@ -51,8 +51,6 @@ def load_and_preprocess_data(file_list, zip_file):
    
     images = np.array(images)
     labels = np.array(labels)
-    print('labels')
-    print(labels)
 
     # Ya no necesitamos LabelEncoder aquí
     # Dividir en conjuntos de entrenamiento y prueba

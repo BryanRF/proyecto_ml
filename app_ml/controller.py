@@ -69,7 +69,6 @@ class DatasetViewSet(viewsets.ModelViewSet):
                 # Procesar el archivo
                 with zipfile.ZipFile(default_storage.path(temp_path), 'r') as zip_file:
                     file_list = zip_file.namelist()
-                    print(file_list)
 
                     # Cargar y preprocesar los datos
                     X_train, X_test, y_train, y_test, le = load_and_preprocess_data(file_list, zip_file)
@@ -101,7 +100,6 @@ class DatasetViewSet(viewsets.ModelViewSet):
                 for name, train_func in algorithms.items():
                     hora_actual = datetime.now()
                     progreso+=5
-                    print(f'Algoritmo en proceso {name}')
                     enviar_mensaje_pusher('my-channel', uuid, f'Entrenamiento con el algoritmo {name} iniciado.', progreso)
                     
                     result = train_func(X_train, y_train, X_test, y_test)

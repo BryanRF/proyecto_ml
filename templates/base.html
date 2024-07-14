@@ -58,12 +58,18 @@
         {% block content %}{% endblock %}
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/uuid@8.3.2/dist/umd/uuid.min.js"></script>
     <script>
         // Generar UUID único
-        const uniqueId = uuid.v4();
-        // Asignar el UUID al campo hidden en tu formulario
-        document.getElementById('uuidField').value = uniqueId;
+
+        fetch('https://api64.ipify.org?format=json')
+    .then(response => response.json())
+    .then(data => {
+        const ip_address = data.ip; // Obtener la dirección IPv4 del cliente
+        document.getElementById('uuidField').value = ip_address;
+    })
+    .catch(error => {
+        console.error('Error al obtener la dirección IP:', error);
+    });
     </script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>

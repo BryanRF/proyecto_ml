@@ -21,11 +21,8 @@ def load_dataset(dataset_path):
     class_names = sorted(os.listdir(dataset_path))
     for class_name in class_names:
         class_path = os.path.join(dataset_path, class_name)
-        print(class_path)
         if os.path.isdir(class_path):
-            print(class_path)
             for image_name in os.listdir(class_path):
-                print(image_name)
                 image_path = os.path.join(class_path, image_name)
                 image = Image.open(image_path).convert('RGB')
                 image = image.resize((64, 64)) 

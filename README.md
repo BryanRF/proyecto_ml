@@ -23,7 +23,11 @@ Este proyecto utiliza Django y Django REST Framework para clasificar imágenes u
 2. **Crear y activar un entorno virtual:**
 
     ```bash
-    python -m venv venv
+    pip install virtualenv
+    ```
+
+    ```bash
+    virtualenv venv
     ```
    # En sistemas Linux/Mac
     ```bash

@@ -17,41 +17,35 @@
     {% block extra_css %}{% endblock %}
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="/">Machine Learning All</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" 
-            data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon custom-color"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="/">Nuevo Dataset</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/clasificador/">Clasificar Imagen</a>
-                    </li>
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="/">Clasificador Inteligente</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon custom-color"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item">
+                    <a class="nav-link {% if request.path == '/' %}active{% endif %}" href="/"> Dataset</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.path == '/clasificador/' %}active{% endif %}" href="/clasificador/">Clasificador</a>
+                </li>
+            </ul>
+            <div class="nav-item dropdown">
+                <button type="button" class="btn btn-primary position-relative" id="notificationDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-bell-fill"></i>
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="inboxBadge">
+                      <span id="notificationCount">0</span>
+                    </span>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end text-dark" aria-labelledby="notificationDropdown" id="notificationList">
+                    <li class="dropdown-item-text">No hay notificaciones.</li>
                 </ul>
-                <div class="nav-item dropdown">
-                   
-                    <button type="button" class="btn btn-primary position-relative "   id="notificationDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        <i class="bi bi-bell-fill"></i>
-                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="inboxBadge">
-                          <span id="notificationCount">0</span>
-                        </span>
-                      </button>
-                      
-                    <ul class="dropdown-menu dropdown-menu-end text-dark" aria-labelledby="notificationDropdown" id="notificationList">
-                        <li class="dropdown-item-text" style="min-width: 500px;">
-                            No hay notificaciones. 
-                        </li>
-                    </ul>
-                    
-                </div>
             </div>
         </div>
-    </nav>
+    </div>
+</nav>
 
     <div class="container mt-5">
         {% block content %}{% endblock %}

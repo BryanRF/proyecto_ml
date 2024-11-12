@@ -1,0 +1,55 @@
+@ -0,0 +1,54 @@
+<!-- templates/home.html -->
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Inicio - Machine Learning All{% endblock %}
+
+{% block content %}
+<style>
+    section .overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 1;
+    }
+    
+    section .container {
+        position: relative;
+        z-index: 2;
+    }
+    
+</style>
+<!-- Sección Hero -->
+<section class="bg-dark text-light text-center py-5" style="background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('{% static 'images/pexels-dmitry-demidov-515774-3852577.jpg' %}'); background-size: cover; background-position: center;">
+    <div class="container">
+        <h1 class="display-4 fw-bold">Bienvenido a Machine Learning All</h1>
+        <p class="lead">Tu plataforma integral para datasets y clasificación de imágenes.</p>
+        <a class="btn btn-primary btn-lg mt-3" href="{% url 'datasets' %}" role="button">Explorar Datasets</a>
+        <a class="btn btn-outline-light btn-lg mt-3 ms-2" href="{% url 'clasificador' %}" role="button">Clasificar Imágenes</a>
+    </div>
+</section>
+
+<!-- Sección de características -->
+<section class="container py-5">
+    <div class="row text-center">
+        <div class="col-md-4">
+            <i class="bi bi-collection" style="font-size: 2rem;"></i>
+            <h3 class="mt-3">Amplia Biblioteca de Datasets</h3>
+            <p>Accede a una variedad de datasets para entrenar y evaluar tus modelos.</p>
+        </div>
+        <div class="col-md-4">
+            <i class="bi bi-gear" style="font-size: 2rem;"></i>
+            <h3 class="mt-3">Herramientas de Clasificación</h3>
+            <p>Utiliza nuestras herramientas avanzadas para clasificar imágenes de manera eficiente.</p>
+        </div>
+        <div class="col-md-4">
+            <i class="bi bi-graph-up" style="font-size: 2rem;"></i>
+            <h3 class="mt-3">Análisis de Rendimiento</h3>
+            <p>Evalúa el rendimiento de tus modelos con métricas detalladas y visualizaciones.</p>
+        </div>
+    </div>
+</section>
+{% endblock %}

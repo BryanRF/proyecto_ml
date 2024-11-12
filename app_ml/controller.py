@@ -82,6 +82,8 @@ class DatasetViewSet(viewsets.ModelViewSet):
                 # Crear una nueva entrada de dataset
                 dataset = Dataset.objects.create(name=name)
                 unique_classes = np.unique(np.concatenate((y_train, y_test)))
+                progreso=0
+                enviar_mensaje_pusher('my-channel', uuid, f'Se inicio entrenamiento correctamente.', progreso)
                 for index, class_name in enumerate(unique_classes):
                     DatasetClass.objects.create(dataset=dataset, name=class_name, index=index)
                                 # Entrenar todos los modelos

@@ -1,5 +1,4 @@
-@ -0,0 +1,54 @@
-<!-- templates/home.html -->
+
 {% extends 'base.html' %}
 {% load static %}
 {% block title %}Inicio - Machine Learning All{% endblock %}
@@ -25,10 +24,10 @@
 <!-- Sección Hero -->
 <section class="bg-dark text-light text-center py-5" style="background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('{% static 'images/pexels-dmitry-demidov-515774-3852577.jpg' %}'); background-size: cover; background-position: center;">
     <div class="container">
-        <h1 class="display-4 fw-bold">Bienvenido a Machine Learning All</h1>
+        <h1 class="display-4 fw-bold">Bienvenido a Clasificador Inteligente</h1>
         <p class="lead">Tu plataforma integral para datasets y clasificación de imágenes.</p>
-        <a class="btn btn-primary btn-lg mt-3" href="{% url 'datasets' %}" role="button">Explorar Datasets</a>
-        <a class="btn btn-outline-light btn-lg mt-3 ms-2" href="{% url 'clasificador' %}" role="button">Clasificar Imágenes</a>
+        <a class="btn btn-primary btn-lg mt-3" href="{% url 'upload_dataset' %}" role="button">Explorar Datasets</a>
+        <a class="btn btn-outline-light btn-lg mt-3 ms-2" href="{% url 'classify_image' %}" role="button">Clasificar Imágenes</a>
     </div>
 </section>
 

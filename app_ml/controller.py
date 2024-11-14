@@ -195,7 +195,7 @@ class ClassificationViewSet(viewsets.ModelViewSet):
         except DatasetClass.DoesNotExist:
             return Response({'mensaje': 'La prediccion no tiene clases registradas vuelve a entrenar otro dataset'}, status=status.HTTP_201_CREATED)
 
-        classification = ClassificationResult.objects.create(
+        ClassificationResult.objects.create(
             dataset=dataset,
             image=image,
             predicted_class=predicted_class,

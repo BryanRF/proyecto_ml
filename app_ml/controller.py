@@ -56,65 +56,64 @@ class DatasetViewSet(viewsets.ModelViewSet):
         name = request.data.get('name')
         datasetname = request.data.get('name')
         dataset_file = request.FILES.get('file')
-        uuid = request.data.get('uuid') 
+        uuid = request.data.get('uuid')
 
         if not dataset_file:
             return Response({'mensaje': 'No se ha subido ningún archivo'}, status=status.HTTP_201_CREATED)
+
         temp_path = default_storage.save('temp_dataset.zip', ContentFile(dataset_file.read()))
 
         try:
-            
-                # Guardar el archivo subido temporalmente
+            # Procesar el archivo subido
+            with zipfile.ZipFile(default_storage.path(temp_path), 'r') as zip_file:
+                file_list = zip_file.namelist()
+                # print(file_list)
 
-                # Procesar el archivo
-                with zipfile.ZipFile(default_storage.path(temp_path), 'r') as zip_file:
-                    file_list = zip_file.namelist()
-                    print(file_list)
+                # Cargar y preprocesar los datos
+                X_train, X_test, y_train, y_test, le = load_and_preprocess_data(file_list, zip_file)
 
-                    # Cargar y preprocesar los datos
-                    X_train, X_test, y_train, y_test, le = load_and_preprocess_data(file_list, zip_file)
+            # Verificar si ya existe un dataset con el mismo nombre
+            if Dataset.objects.filter(name=name).exists():
+                return Response({'mensaje': 'Ya existe un dataset con este nombre'}, status=status.HTTP_201_CREATED)
 
-                # Verificar si ya existe un dataset con el mismo nombre
-                existing_dataset = Dataset.objects.filter(name=name).exists()
-                if existing_dataset:
-                    return Response({'mensaje': 'Ya existe un dataset con este nombre'}, status=status.HTTP_201_CREATED)
+            # Crear una nueva entrada de dataset
+            dataset = Dataset.objects.create(name=name)
+            unique_classes = np.unique(np.concatenate((y_train, y_test)))
+            progreso = 0
 
-                # Crear una nueva entrada de dataset
-                dataset = Dataset.objects.create(name=name)
-                unique_classes = np.unique(np.concatenate((y_train, y_test)))
-                progreso=0
-                enviar_mensaje_pusher('my-channel', uuid, f'Se inicio entrenamiento correctamente.', progreso)
-                for index, class_name in enumerate(unique_classes):
-                    DatasetClass.objects.create(dataset=dataset, name=class_name, index=index)
-                                # Entrenar todos los modelos
-                algorithms = {
-                    'SVM': train_svm, #5 -15 %
-                    'Naive Bayes': train_naive_bayes, #20 -35 %
-                    'Decision Tree': train_decision_tree, #40 -55 %
-                    'Logistic Regression': train_logistic_regression, #60 -75 %
-                    'Neural Network': train_neural_network, #80 -95 %
-                }
+            enviar_mensaje_pusher('my-channel', uuid, 'Se inició el entrenamiento correctamente.', progreso)
 
-                results = {}
-                best_model = None
-                best_accuracy = 0
-                
-                progreso=0
-                for name, train_func in algorithms.items():
-                    hora_actual = datetime.now()
-                    progreso+=5
-                    print(f'Algoritmo en proceso {name}')
-                    enviar_mensaje_pusher('my-channel', uuid, f'Entrenamiento con el algoritmo {name} iniciado.', progreso)
-                    
+            # Crear clases en la base de datos
+            for index, class_name in enumerate(unique_classes):
+                DatasetClass.objects.create(dataset=dataset, name=class_name, index=index)
+
+            # Definir los algoritmos y entrenarlos
+            algorithms = {
+                # 'SVM': train_svm,
+                # 'Naive Bayes': train_naive_bayes,
+                'Decision Tree': train_decision_tree,
+                'Logistic Regression': train_logistic_regression,
+                # 'Neural Network': train_neural_network,
+            }
+
+            total_algorithms = len(algorithms)
+            progreso_incremento = 100 / total_algorithms
+            results = {}
+            best_model = None
+            best_accuracy = 0
+
+            for i, (algo_name, train_func) in enumerate(algorithms.items(), start=1):
+                enviar_mensaje_pusher('my-channel', uuid, f'Entrenamiento con el algoritmo {algo_name} iniciado.', progreso)
+
+                try:
+                    # Entrenar el modelo
                     result = train_func(X_train, y_train, X_test, y_test)
-                    results[name] = result
-                    
-               
-                    
-                    # Guardar el resultado del entrenamiento
+                    results[algo_name] = result
+
+                    # Guardar resultados en la base de datos
                     TrainingResult.objects.create(
                         dataset=dataset,
-                        algorithm=name,
+                        algorithm=algo_name,
                         accuracy=result['accuracy'],
                         precision=result['precision'],
                         recall=result['recall'],
@@ -123,40 +122,49 @@ class DatasetViewSet(viewsets.ModelViewSet):
                         cpu_usage=result['cpu_usage'],
                         execution_time=result['execution_time']
                     )
-                    
 
-                    # Mantener el registro del mejor modelo
+                    # Verificar si es el mejor modelo
                     if result['accuracy'] > best_accuracy:
                         best_accuracy = result['accuracy']
                         best_model = result['model']
-                        
-                    progreso+=10
-                    enviar_mensaje_pusher('my-channel', uuid, f'Entrenamiento con el algoritmo {name} finalizado.', progreso)
-                    
 
-                # Guardar el mejor modelo
-                if best_model:
-                    model_path = f'media/mejor_modelo_{dataset.id}.joblib'
-                    joblib.dump(best_model, os.path.join(settings.MEDIA_ROOT, model_path))
-                    dataset.best_model_path = model_path
-                    dataset.save()
+                    progreso += progreso_incremento
+                    enviar_mensaje_pusher('my-channel', uuid, f'Entrenamiento con el algoritmo {algo_name} finalizado.', progreso)
 
-                # Eliminar el archivo temporal
-                if os.path.exists(temp_path):
-                    os.remove(temp_path)
-                enviar_mensaje_pusher('my-channel', uuid, f'El dataset {datasetname} fue entrenado exitosamente.', 100)
+                except Exception as e:
+                    if os.path.exists(temp_path):
+                        os.remove(temp_path)
+                    print(f"Error entrenando con el algoritmo {algo_name}: {e}")
+                    enviar_mensaje_pusher('my-channel', uuid, f'Error con el algoritmo {algo_name}.', progreso)
 
-                return Response({'mensaje': 'Dataset entrenado exitosamente', 'creacion': dataset.id}, status=status.HTTP_201_CREATED)
+            # Guardar el mejor modelo entrenado
+            if best_model:
+                model_path = f'media/mejor_modelo_{dataset.id}.joblib'
+                joblib.dump(best_model, os.path.join(settings.MEDIA_ROOT, model_path))
+                dataset.best_model_path = model_path
+                dataset.save()
+
+            enviar_mensaje_pusher('my-channel', uuid, f'El dataset {datasetname} fue entrenado exitosamente.', 100)
+            if os.path.exists(temp_path):
+                os.remove(temp_path)
+            return Response({'mensaje': 'Dataset entrenado exitosamente', 'creacion': dataset.id}, status=status.HTTP_201_CREATED)
 
         except IntegrityError:
+            if os.path.exists(temp_path):
+                os.remove(temp_path)
             return Response({'mensaje': 'Ya existe un dataset con este nombre'}, status=status.HTTP_201_CREATED)
 
         except Exception as e:
+            print(f"Error general: {e}")
             if os.path.exists(temp_path):
                 os.remove(temp_path)
-            return Response({'mensaje': f'Error procesando el dataset: {str(e)}'}, status=status.HTTP_201_CREATED)
-    
-    
+            return Response({'mensaje': f'Error al entrenar el dataset: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        finally:
+            # Asegurar que se elimine el archivo temporal
+            if os.path.exists(temp_path):
+                os.remove(temp_path)
+
 class ClassificationViewSet(viewsets.ModelViewSet):
     queryset = ClassificationResult.objects.all()
     serializer_class = ClassificationResultSerializer

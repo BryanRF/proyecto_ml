@@ -3,52 +3,102 @@
 {% block title %}Clasificar Imagen{% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-md-6 card mr-3">
-        <div class="card-header">
-            <h2 class="card-title">
-                Clasificar Imagen
-              </h2>
-        </div>
-        <div class="card-body">
-        <form id="classifyForm">
-            {% csrf_token %}
-            <div class="mb-3">
-                <label for="datasetSelect" class="form-label">Seleccionar Dataset</label>
-                <select class="form-select mb-3" id="datasetSelect" required>
-                    <option value="">Cargando datasets...</option>
-                </select>
-                <button type="button" class="btn btn-danger" id="downloadReportButton">
-                    <span id="downloadIcon"><i class="bi bi-file-earmark-pdf"></i></span>
-                    <span id="downloadSpinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
-                    Descargar Reporte
-                </button>
+<style>
+    section .overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 1;
+    }
+    
+    section .container {
+        position: relative;
+        z-index: 2;
+    }
+    #resultContainer {
+        width: 100%;
+        padding: 1rem;
+        text-align: center;
+    }
+    
+    #additionalInfo {
+        margin-top: 1rem;
+        text-align: left;
+    }
+    
+</style>
+<section class="container-fluid">
+    <div class="row">
+        <!-- Sección Clasificar Imagen -->
+        <div class="col-lg-4 col-md-12 mb-2">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        Clasificar Imagen
+                    </h2>
+                </div>
+                <div class="card-body">
+                    <form id="classifyForm">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="datasetSelect" class="form-label">Seleccionar Dataset</label>
+                            <select class="form-select" id="datasetSelect" required>
+                                <option value="">Cargando datasets...</option>
+                            </select>
+                            <button type="button" class="btn btn-danger mt-3" id="downloadReportButton">
+                                <span id="downloadIcon"><i class="bi bi-file-earmark-pdf"></i></span>
+                                <span id="downloadSpinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                                Descargar Reporte
+                            </button>
+                        </div>
+                        <div class="mb-3">
+                            <label for="imageFile" class="form-label">Seleccionar Imagen</label>
+                            <input type="file" class="form-control" id="imageFile" accept="image/*" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Clasificar Imagen</button>
+                    </form>
+                </div>
             </div>
-            <div class="mb-3">
-                <label for="imageFile" class="form-label">Seleccionar Imagen</label>
-                <input type="file" class="form-control" id="imageFile" accept="image/*" required>
+        </div>
+
+        <!-- Sección Resultado de Clasificación -->
+        <div class="col-lg-8 col-md-12">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        Resultado de la Clasificación
+                    </h2>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <!-- Columna para Resultados -->
+                        <div class="col-md-6 d-flex flex-column justify-content-center">
+                            <div id="resultContainer" style="display: none; text-align: left;">
+                                <h4>Clase Predicha: <span id="predictedClass" class="text-primary"></span></h4>
+                                <p>Confianza: <span id="confidence" class="fw-bold"></span></p>
+                                <p><strong>Descripción:</strong> <span id="description" class="text-muted"></span></p>
+                                <p><strong>Tipo de Clase:</strong> <span id="tipoClase" class="text-success"></span></p>
+                            </div>
+                        </div>
+        
+                        <!-- Columna para Imagen Previa -->
+                        <div class="col-md-6 d-flex align-items-center justify-content-center">
+                            <div id="imagePreview" class="w-100 text-center">
+                                <img id="previewImage" src="" alt="Vista previa de la imagen" class="img-fluid rounded shadow-sm" style="display: none;">
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <button type="submit" class="btn btn-primary">Clasificar Imagen</button>
-        </form>
-    </div>
-    </div>
-    <div class="col-md-5 card ">
-        <div class="card-title card-header">
-            <h2 class="card-title">
-                Resultado de la Clasificación
-              </h2>
         </div>
-        <div class="card-body">
-        <div id="resultContainer" style="display: none;">
-            <h3>Clase Predicha: <span id="predictedClass"></span></h3>
-            <p>Confianza: <span id="confidence"></span></p>
-        </div>
-        <div id="imagePreview" class="mt-3">
-            <img id="previewImage" src="" alt="Vista previa de la imagen" style="max-width: 100%; display: none;">
-        </div>
+        
+        
     </div>
-    </div>
-</div>
+</section>
+
 {% endblock %}
 
 {% block extra_js %}
@@ -168,14 +218,28 @@
             })
             .then(response => {
                 if (!response.ok) {
-                    throw new Error('Error en la clasificación de la imagen');
+                    throw new Error(response.mensaje);
                 }
                 return response.json();
             })
             .then(data => {
                 resultContainer.style.display = 'block';
                 predictedClass.textContent = data.predicted_class;
+                if (data.normal) {
+                    document.getElementById('tipoClase').classList.remove('text-danger');
+                    document.getElementById('tipoClase').classList.add('text-success');
+                } else {
+                    document.getElementById('tipoClase').classList.remove('text-success');
+                    document.getElementById('tipoClase').classList.add('text-danger');
+                }
+
                 confidence.textContent = (data.confidence * 100).toFixed(2) + '%';
+                document.getElementById('description').textContent = data.description || "Sin descripción disponible.";
+                document.getElementById('tipoClase').textContent = data.tipo_clase || "Sin tipo.";
+                if (data.filter_image_url) {
+                    previewImage.src = data.filter_image_url;
+                    previewImage.style.display = 'block';
+                }
             })
             .catch(error => {
                 console.error('Error:', error);

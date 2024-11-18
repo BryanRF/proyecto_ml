@@ -8,8 +8,10 @@ from rest_framework import viewsets, status
 from django.core.files.base import ContentFile
 from rest_framework.decorators import action
 from rest_framework.response import Response
+
+from app_ml.utils.filter_image import generate_filter_overlay
 from .models import *
-from .serializers import DatasetSerializer, TrainingResultSerializer, ClassificationResultSerializer
+from .serializers import DatasetSerializer, EntrenamientoSerializer, PrediccionSerializer
 from .utils.data_processing import load_and_preprocess_data, preprocess_single_image
 from .ml_algorithms.logistic_regression import train_logistic_regression
 from .ml_algorithms.neural_network import train_neural_network
@@ -74,7 +76,7 @@ class DatasetViewSet(viewsets.ModelViewSet):
 
             # Verificar si ya existe un dataset con el mismo nombre
             if Dataset.objects.filter(name=name).exists():
-                return Response({'mensaje': 'Ya existe un dataset con este nombre'}, status=status.HTTP_201_CREATED)
+                return Response({'mensaje': 'Ya existe un dataset con este nombre!'}, status=status.HTTP_201_CREATED)
 
             # Crear una nueva entrada de dataset
             dataset = Dataset.objects.create(name=name)
@@ -85,7 +87,7 @@ class DatasetViewSet(viewsets.ModelViewSet):
 
             # Crear clases en la base de datos
             for index, class_name in enumerate(unique_classes):
-                DatasetClass.objects.create(dataset=dataset, name=class_name, index=index)
+                Clase.objects.create(dataset=dataset, name=class_name, index=index)
 
             # Definir los algoritmos y entrenarlos
             algorithms = {
@@ -111,7 +113,7 @@ class DatasetViewSet(viewsets.ModelViewSet):
                     results[algo_name] = result
 
                     # Guardar resultados en la base de datos
-                    TrainingResult.objects.create(
+                    Entrenamiento.objects.create(
                         dataset=dataset,
                         algorithm=algo_name,
                         accuracy=result['accuracy'],
@@ -149,10 +151,10 @@ class DatasetViewSet(viewsets.ModelViewSet):
                 os.remove(temp_path)
             return Response({'mensaje': 'Dataset entrenado exitosamente', 'creacion': dataset.id}, status=status.HTTP_201_CREATED)
 
-        except IntegrityError:
+        except IntegrityError as e :
             if os.path.exists(temp_path):
                 os.remove(temp_path)
-            return Response({'mensaje': 'Ya existe un dataset con este nombre'}, status=status.HTTP_201_CREATED)
+            return Response({'mensaje': f'{str(e)}'}, status=status.HTTP_201_CREATED)
 
         except Exception as e:
             print(f"Error general: {e}")
@@ -166,8 +168,8 @@ class DatasetViewSet(viewsets.ModelViewSet):
                 os.remove(temp_path)
 
 class ClassificationViewSet(viewsets.ModelViewSet):
-    queryset = ClassificationResult.objects.all()
-    serializer_class = ClassificationResultSerializer
+    queryset = Prediccion.objects.all()
+    serializer_class = PrediccionSerializer
 
     @action(detail=False, methods=['post'])
     def classify_image(self, request):
@@ -175,45 +177,60 @@ class ClassificationViewSet(viewsets.ModelViewSet):
         dataset_id = request.data.get('dataset_id')
 
         if not image or not dataset_id:
-            return Response({'mensaje': 'Requiere dataset seleccionado'}, status=status.HTTP_201_CREATED)
+            return Response({'mensaje': 'Requiere dataset seleccionado'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             dataset = Dataset.objects.get(id=dataset_id)
         except Dataset.DoesNotExist:
-            return Response({'mensaje': 'Dataset no encontrado'}, status=status.HTTP_201_CREATED)
+            return Response({'mensaje': 'Dataset no encontrado'}, status=status.HTTP_404_NOT_FOUND)
 
         if not dataset.best_model_path:
-            return Response({'mensaje': 'El modelo del dataset fue eliminado'}, status=status.HTTP_201_CREATED)
+            return Response({'mensaje': 'El modelo del dataset fue eliminado'}, status=status.HTTP_404_NOT_FOUND)
 
-        # cargamos mejor modelo
+        # Cargar mejor modelo
         best_model = joblib.load(dataset.best_model_path)
 
-        # Procesamos imagen
+        # Procesar imagen
         X = preprocess_single_image(image)
 
         if X is None:
-            return Response({'mensaje': 'Error al procesar la imagen'}, status=status.HTTP_201_CREATED)
+            return Response({'mensaje': 'Error al procesar la imagen'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Clasifciamos imagen
+        # Clasificar imagen
         prediction = best_model.predict(X)[0]
         confidence = best_model.predict_proba(X)[0].max()
-        
-        try:
-            predicted_class = DatasetClass.objects.get(dataset=dataset, name=prediction)
-        except DatasetClass.DoesNotExist:
-            return Response({'mensaje': 'La prediccion no tiene clases registradas vuelve a entrenar otro dataset'}, status=status.HTTP_201_CREATED)
 
-        ClassificationResult.objects.create(
+        try:
+            predicted_class = Clase.objects.get(dataset=dataset, name=prediction)
+        except Clase.DoesNotExist:
+            return Response({'mensaje': 'La predicción no tiene clases registradas. Vuelve a entrenar otro dataset.'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Crear la predicción en la base de datos
+        Prediccion.objects.create(
             dataset=dataset,
             image=image,
             predicted_class=predicted_class,
             confidence=confidence
         )
 
-        return Response({
+        # Incluir más detalles de la clase
+        color = predicted_class.tipo_clase.color if predicted_class.tipo_clase.color else None
+        print(color)
+        filter_image_path = None
+        if not predicted_class.normal and color !=None:
+            filter_image_path = generate_filter_overlay(image, color)  # Generar imagen con filtro
+
+        # Incluir más detalles de la clase
+        response_data = {
             'predicted_class': predicted_class.name,
-            'confidence': confidence
-        }, status=status.HTTP_200_OK)
+            'confidence': confidence,
+            'description': predicted_class.description,
+            'tipo_clase': predicted_class.tipo_clase.name if predicted_class.tipo_clase else "Sin tipo",
+            'filter_image_url': filter_image_path if filter_image_path else None,
+             'normal': predicted_class.normal
+        }
+
+        return Response(response_data, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=['get'])
     def generate_report(self, request):
@@ -235,7 +252,7 @@ class ClassificationViewSet(viewsets.ModelViewSet):
                 filename=f'reporte_{dataset_id}.pdf'
             )
         else:
-            training_results = TrainingResult.objects.filter(dataset=dataset)
+            training_results = Entrenamiento.objects.filter(dataset=dataset)
 
             if not training_results:
                 return Response({'mensaje': 'No se encontraron datos entrenados'}, status=status.HTTP_201_CREATED)

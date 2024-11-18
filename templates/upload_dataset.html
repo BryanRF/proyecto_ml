@@ -129,7 +129,7 @@
 
                     fetch(`/api/generate_report/?dataset_id=${data.creacion}`)
                         .then(response => {
-                            if (!response.ok) throw new Error('Error al descargar el reporte');
+                            if (!response.ok) throw new Error(response.mensaje);
                             return response.blob();
                         })
                         .then(blob => {

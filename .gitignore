@@ -31,6 +31,7 @@ db.sqlite3-journal
 # Media files
 media/
 uploaded_images/
+filters/
 
 
 # Temporary files
@@ -40,7 +41,7 @@ uploaded_images/
 *.pyc
 *.zip
 *~
-
+*.sqlite3
 # Model files
 *.joblib
 
@@ -62,3 +63,4 @@ Thumbs.db
 *.zip
 *.tar.gz
 *.rar
+*.sqlite3

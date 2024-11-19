@@ -125,8 +125,25 @@ El proyecto utiliza modelos de Django para representar los datos. Cuando se real
    python manage.py migrate
    ```
 
-Asegúrate de realizar estos pasos cada vez que modifiques la estructura de los modelos.
 
+
+## Clasificación de Imágenes
+Una vez que hayas entrenado el modelo y las clases han sido creadas, puedes realizar clasificaciones sobre nuevas imágenes. A continuación, se describe cómo funcionan los tipos de clase y cómo aplicar un color para la segmentación de imágenes.
+
+## Creación de Clases y Tipos de Clase
+Para cada clase que hayas creado en el dataset, es necesario definir si la clase será utilizada para segmentación. Esto se realiza de la siguiente manera:
+
+1. Tipo de Clase: Define los tipos de clases dentro de tu dataset. Cada tipo de clase puede tener un color asociado (en formato HEX), que será utilizado en la segmentación de imágenes.
+
+2. Clase: Cada clase se asociará con un tipo de clase, y cada clase tiene un campo llamado normal. Este campo es importante:
+
+Si normal = True: La imagen no será procesada para segmentación.
+Si normal = False: La imagen será procesada para segmentación, y se le aplicará un filtro de color para resaltar la segmentación.
+Modelo de Datos
+En el modelo de datos, tenemos dos entidades clave para la clasificación:
+
+1. TipoClase: Define el tipo de clase (por ejemplo, normal o segmentado) y un color asociado.
+2. Clase: Cada clase tiene un nombre, un índice y una descripción, junto con una relación a TipoClase. La clase también tiene el campo normal, que determinará si se debe aplicar un filtro para resaltar las áreas segmentadas en la imagen.
 
 ## Panel de Administración
 
@@ -146,6 +163,8 @@ Si deseas contribuir al proyecto:
 1. Crea una nueva rama en GitHub Desktop.
 2. Realiza tus cambios y haz commit desde GitHub Desktop.
 3. Publica la rama y crea un Pull Request desde la interfaz de GitHub.
+
+
 
 ¡Gracias por contribuir!
 ```
